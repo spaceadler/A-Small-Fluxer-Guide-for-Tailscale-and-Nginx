@@ -175,14 +175,12 @@ To fix this, we use path-based routing via raw Nginx configurations to send data
 1. In NPM, edit your Proxy Host for `chat.example.com`.
 2. **Details Tab:** Set the Forward IP to your Docker Host IP, and the Port to `8443`, https mode. Select the certificate Force SSL.
 3. **Custom Locations Tab:** Leave this completely blank.
-4. **Advanced (cog on the top right):** Paste the following configuration, replacing `YOUR_SERVER_IP` with your actual host machine's IP (e.g., `192.168.1.50`).
+4. **Advanced (cog on the top right):** Paste the following configuration, replacing `YOUR_SERVER_IP` with your actual host machine's IP (e.g., `192.168.1.50`) and port if need be.
 
 ```nginx
-# Route 1: Core API Data
-# Intercepts /api/, strips the prefix, and forwards cleanly to the API container
 location /api/ {
     rewrite ^/api/(.*)$ /$1 break;
-    proxy_pass http://YOUR_SERVER_IP:8442; # same port we talked about just a second ago when we were in the compose file.
+    proxy_pass http://YOUR_SERVER_IP:8442;
     
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -195,7 +193,7 @@ location /api/ {
 # Route 2: The Server Identity Map
 # Intercepts the configuration map request without stripping the prefix
 location /.well-known/ {
-    proxy_pass http://YOUR_SERVER_IP:8442; # same one here!
+    proxy_pass http://YOUR_SERVER_IP:8442;
     
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;

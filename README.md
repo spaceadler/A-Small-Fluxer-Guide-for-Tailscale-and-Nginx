@@ -190,8 +190,6 @@ location /api/ {
     proxy_set_header Connection "upgrade";
 }
 
-# Route 2: The Server Identity Map
-# Intercepts the configuration map request without stripping the prefix
 location /.well-known/ {
     proxy_pass http://YOUR_SERVER_IP:8442;
     

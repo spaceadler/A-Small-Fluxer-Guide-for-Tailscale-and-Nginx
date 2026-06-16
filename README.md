@@ -8,12 +8,14 @@ This guide strips out the Docker "black box" anonymous volumes, maps everything 
 
 ## 1. Sourcing a Certificate (No Cloudflare)
 
-Since Caddy will still handle the internal frontend, it strictly requires valid HTTPS certificates to load `.woff2` fonts securely. If you don't use Cloudflare, you can handle this natively through NPM:
+Since Caddy will still handle the internal frontend, it strictly requires valid HTTPS certificates to load anything securely without screaming out a "NetworkError". If you don't use Cloudflare, you can handle this natively through NPM:
 
 1. Go to your Nginx Proxy Manager dashboard.
 2. Go to **SSL Certificates** -> **Add SSL Certificate** -> **Let's Encrypt**.
 3. Generate a wildcard or specific domain cert for your domain (e.g., `chat.example.com`).
 4. Download the generated `fullchain.pem` and `privkey.pem` files and place them in a folder called `./certs` right next to your `docker-compose.yml`.
+
+(Or get Tailscale to give out a certificate for your machine that you can use here. Warning, Tailscale hands out only one (1) certificate per machine. Although you can spin up more Tailscale containers, add them to your network, and farm out extra 4 certificates.)
 
 ## 2. Generate Your Secrets
 

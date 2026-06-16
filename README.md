@@ -6,6 +6,14 @@ Now by default, Fluxer’s architecture heavily relies on Caddy as a "Router Bra
 
 This guide strips out the Docker "black box" anonymous volumes, maps everything locally, and teaches Nginx exactly how to bypass Caddy to feed data directly into the Fluxer API without triggering `404` or `502` HTML errors.
 
+## 0. Some Pre-work
+
+Follow the Fluxer documentation up until Step 2, setting up Docker, and downloading the necessary files.
+The codeblocks that follow this (ESPECIALLY the ones that have comments) are what we will *change* the default configuration with.
+You're still supposed to curl the files in the first place!
+
+With the environment ready, let's begin.
+
 ## 1. Sourcing a Certificate (No Cloudflare)
 
 Since Caddy will still handle the internal frontend, it strictly requires valid HTTPS certificates to load anything securely without screaming out a "NetworkError". If you don't use Cloudflare, you can handle this natively through NPM:

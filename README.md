@@ -63,20 +63,7 @@ FLUXER_CADDY_SITE_ADDRESS=:8443 # this is the port where you want Nginx to reach
 
 ```
 
-## 4. The `Caddyfile` Injection
-
-Copy "tls /etc/caddy/..." in the Caddyfile like so: 
-
-```caddyfile
-{$FLUXER_CADDY_SITE_ADDRESS} {
-    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
-    
-    # ... rest of default Fluxer Caddy config ...
-}
-
-```
-
-## 5. LiveKit Networking (`livekit.yaml`)
+## 4. LiveKit Networking (`livekit.yaml`)
 
 If you are running this over a VPN (like Tailscale) or avoiding external IPs, ensure LiveKit binds to your specific host IP so UDP WebRTC packets don't get lost in Docker's internal networks.
 
@@ -95,7 +82,7 @@ rtc:
 
 ```
 
-## 6. The `docker-compose.yml` (Local Volumes & API Bypass)
+## 5. The `docker-compose.yml` (Local Volumes & API Bypass)
 
 We are moving away from anonymous Docker volumes to localized `./` folders so your data survives tear-downs. Crucially, we are exposing the `api` service to port `8442` so Nginx can reach it directly.
 
@@ -112,7 +99,6 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro   # dont forget to
       - ./caddy-data:/data                    # add the dot "."
       - ./caddy-config:/config                # before the slash "/"
-      - ./certs:/etc/caddy/certs  # Mount your custom NPM certs here
     depends_on: [api, gateway, media-proxy, static-proxy, admin]
 
   postgres:
@@ -176,14 +162,14 @@ services:
                     # port 8080 was already taken so i created this to reroute it to 8442, we will use this port in nginx shortly.
 ```
 
-## 7. The Nginx Proxy Manager (Advanced Routing)
+## 6. The Nginx Proxy Manager (Advanced Routing)
 
 If you blindly proxy Nginx to Caddy, Caddy will fail to route data requests (`/.well-known` and `/api/`) and will return `index.html` web pages to your browser, causing JavaScript crashes.
 
 To fix this, we use path-based routing via raw Nginx configurations to send data straight to the API container while stripping necessary prefixes.
 
 1. In NPM, edit your Proxy Host for `chat.example.com`.
-2. **Details Tab:** Set the Forward IP to your Docker Host IP, and the Port to `8443`, https mode. Select the certificate Force SSL.
+2. **Details Tab:** Set the Forward IP to your Docker Host IP, and the Port to `8443`, http mode. Select the certificate Force SSL.
 3. **Custom Locations Tab:** Leave this completely blank.
 4. **Advanced (cog on the top right):** Paste the following configuration, replacing `YOUR_SERVER_IP` with your actual host machine's IP (e.g., `192.168.1.50`) and port if need be.
 

@@ -198,3 +198,5 @@ location /.well-known/ {
 ```
 
 Start your stack (`docker compose up -d`). **Note:** The API container takes over 2 minutes to run each time, especially the first time. Once it is fully booted, your Nginx proxy will perfectly orchestrate traffic between the Caddy frontend and the bypassed API backend.
+
+This works completely for HTTPS, but what's left is getting audio and video to work. I've been tinkering on and off with this to no avail. If anyone has ideas/wants to bounce around hit me up on discord with the same username.

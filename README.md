@@ -216,9 +216,25 @@ location /livekit/ {
 
 Start your stack (`docker compose up -d`). **Note:** The API container takes over 3 minutes to run each time, especially the first time. Once it is fully booted, your Nginx proxy will perfectly orchestrate traffic between the Caddy frontend and the bypassed API backend.
 
-## 7. Troubleshooting
+## 7. Configuration
+
+Finally, go to the domain you hosted Fluxer on, make an admin account, then go to the Fluxer Admin Dashboard (https://chat.example.com/admin):
+
+    1. Go to `Voice Regions`,
+    2. Create a region, save, refresh page then hit `Manage Servers`,
+    3. Plug in the following information:
+        - Endpoint: `wss://chat.example.com/livekit`,
+        - API Key: `fluxer` (Pulled from .env),
+        - API Secret: `LIVEKIT_API_SECRET` (Pulled from .env),
+        - Check `Server is Active`.
+
+Congratulations! You are now a proud owner of a self hosted, self managed, localized, free-and-open-source, Discord alternative
+Make your communities, add your friends, regret the fact that you made a social app behind a firewall, and above all... Enjoy!
+
+## 8. Troubleshooting
 
 1. Verify that UFW is active and that your tailscale0 interface has a clean, green light to accept UDP and TCP traffic on ports 7880, 7881, and 7882
+2. Copy this guide to a reasonably capable LLM, along with the original documentation found [here](https://docs.fluxer.app/operator/get-started/), followed by your problem, fixes you took to remedy it, and try your luck.
 
 ---
 

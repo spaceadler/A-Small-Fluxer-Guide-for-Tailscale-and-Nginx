@@ -8,8 +8,9 @@ This guide strips out the Docker "black box" anonymous volumes, maps everything 
 
 ## 0. Some Pre-work
 
-Follow the Fluxer documentation up until Step 2, setting up Docker, and downloading the necessary files.
-The codeblocks that follow this (ESPECIALLY the ones that have comments) are what we will *change* the default configuration with.
+Follow the [Fluxer Operator documentation](https://docs.fluxer.app/operator/get-started/) up until Step 2: Setting up Docker and downloading the necessary files.
+
+The codeblocks that come after this (ESPECIALLY the ones that have comments) are what we will *change* the default configuration with.
 You're still supposed to curl the files in the first place!
 
 With the environment ready, let's begin.
@@ -22,7 +23,7 @@ Since Caddy will still handle the internal frontend, it strictly requires valid 
 2. Go to **SSL Certificates** -> **Add SSL Certificate** -> **Let's Encrypt**.
 3. Generate a wildcard or specific domain cert for your domain (e.g., `chat.example.com`).
 
-(Or get Tailscale to give out a certificate for your machine that you can use here. Warning, Tailscale hands out only one (1) certificate per machine. Although you can spin up more Tailscale containers, add them to your network, and farm out extra 4 certificates.)
+(Or get Tailscale to give out a certificate for your machine that you can use here instead. Warning, Tailscale hands out only one (1) certificate per machine. Although you can spin up more Tailscale containers, add them to your network, and farm out extra 4 certificates.)
 
 ## 2. Generate Your Secrets
 
@@ -58,7 +59,7 @@ FLUXER_PUBLIC_SCHEME=https      # https to allow voice and video
 FLUXER_PUBLIC_PORT=443          # 443 to be passed as HTTPS and eventually land in Nginx, instead of Caddy.
 FLUXER_CADDY_SITE_ADDRESS=:8443 # this is the port where you want Nginx to reach the service. Should be the same as in the compose file.
 
-# (Paste all the generated secrets from the bash script below here)
+# (rest of all the `.env` secrets from the bash script below here)
 # ...
 
 ```
@@ -74,8 +75,8 @@ log_level: info
 rtc:
   tcp_port: 7881
   udp_port: 7882
-  use_external_ip: false
-  node_ip: 100.124.254.50
+  use_external_ip: false  # important!
+  node_ip: 100.124.254.50 # this as well!
 
 turn:
   enabled: false
@@ -89,9 +90,10 @@ webhook:
 
 ## 5. The `docker-compose.yml` (Local Volumes & API Bypass)
 
-We are moving away from anonymous Docker volumes to localized `./` folders so your data survives tear-downs. Crucially, we are exposing the `api` service to port `8442` so Nginx can reach it directly. `8442` is another magic number, change it to whatever you like.
+We are moving away from anonymous Docker volumes to localized `./` folders so your data survives tear-downs. Crucially, we are exposing the `api` service to port `8442` so Nginx can reach it directly. (`8442` is another magic number, change it to whatever you like.)
 
 ```yaml
+# Some random environment variables. Don't remove them, just paste this code block directly when we get to the services bit. I don't want this code segment to be too long that's why.
 services:
   caddy:
     image: caddy:2.10-alpine
@@ -102,8 +104,8 @@ services:
       FLUXER_CADDY_SITE_ADDRESS: ${FLUXER_CADDY_SITE_ADDRESS:?set FLUXER_CADDY_SITE_ADDRESS in .env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro   # dont forget to
-      - ./caddy-data:/data                    # add the dot "."
-      - ./caddy-config:/config                # before the slash "/"
+      - ./caddy-data:/data                    # add the dots "."
+      - ./caddy-config:/config                # before the slashes "/"
     depends_on: [api, gateway, media-proxy, static-proxy, admin]
 
   postgres:
@@ -115,11 +117,21 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - ./postgres-data:/postgres # also here
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fluxer -d fluxer"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   valkey:
     image: valkey/valkey:8.1-alpine
     restart: unless-stopped
     command: ["valkey-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   nats:
     image: nats:2.14-alpine
@@ -145,10 +157,27 @@ services:
     volumes:
       - ./seaweedfs-data:/seaweedfs-data # almost there
 
+  seaweedfs-init:
+    image: chrislusf/seaweedfs:4.34
+    depends_on: [seaweedfs]
+    restart: "no"
+    entrypoint:
+      - /bin/sh
+      - -c
+      - -c
+      - >
+        for i in $$(seq 1 60); do
+          echo "s3.bucket.create -name fluxer" | weed shell -master=seaweedfs:9333 >/dev/null 2>&1 && break || sleep 2;
+        done;
+        for b in fluxer fluxer-uploads fluxer-downloads fluxer-reports fluxer-harvests; do
+          echo "s3.bucket.create -name $$b" | weed shell -master=seaweedfs:9333 || true;
+        done;
+        echo "buckets ready";
+
   livekit:
     image: livekit/livekit-server:v1.12.0
     restart: unless-stopped
-    network_mode: "host"  # <--- THIS IS THE MAGIC FIX
+    network_mode: "host"  # <--- THIS IS THE MAGIC FIX FOR VOICE/VIDEO SUPPORT! MAKE SURE TO REMOVE "networks: [fluxer]"!
     command: ["--config", "/etc/livekit.yaml"]
     environment:
       LIVEKIT_KEYS: "${LIVEKIT_API_KEY}:${LIVEKIT_API_SECRET}"
@@ -157,14 +186,25 @@ services:
     #ports: <------- we comment these out because we gave livekit host network access to be able to read WebRTC calls.
     #  - "${FLUXER_LIVEKIT_TCP_PORT:-7881}:7881"
     #  - "${FLUXER_LIVEKIT_UDP_PORT:-7882}:7882/udp" 
+
   api:
     image: ${FLUXER_REGISTRY:-ghcr.io/${FLUXER_REGISTRY_OWNER:-fluxerapp}}/fluxer-api:${FLUXER_IMAGE_TAG:-v1}
     environment:
       # Pass through the env variables
       FLUXER_API_PORT: "8080" 
+      FLUXER_API_PRESIGNED_ATTACHMENT_UPLOADS_ENABLED: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8080/_health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 90s    
     ports:
       - "8442:8080" # THE CRITICAL BYPASS: Exposes the API directly to NPM!
                     # port 8080 was already taken so i created this to reroute it to 8442, we will use this port in nginx shortly.
+
+    # depends on, etc etc... Paste until here.
+    # IMPORTANT, DONT REMOVE THE REST OF THE API SERVICE CODE! I'm not editing it so just paste until here
 ```
 
 ## 6. The Nginx Proxy Manager (Advanced Routing)

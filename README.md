@@ -93,7 +93,8 @@ webhook:
 We are moving away from anonymous Docker volumes to localized `./` folders so your data survives tear-downs. Crucially, we are exposing the `api` service to port `8442` so Nginx can reach it directly. (`8442` is another magic number, change it to whatever you like.)
 
 ```yaml
-# Some random environment variables. Don't remove them, just paste this code block directly when we get to the services bit. I don't want this code segment to be too long that's why.
+# Some random environment variables. Don't remove them.
+# Just paste this code block directly when you get to the services bit.
 services:
   caddy:
     image: caddy:2.10-alpine
@@ -204,7 +205,7 @@ services:
                     # port 8080 was already taken so i created this to reroute it to 8442, we will use this port in nginx shortly.
 
     # depends on, etc etc... Paste until here.
-    # IMPORTANT, DONT REMOVE THE REST OF THE API SERVICE CODE! I'm not editing it so just paste until here
+    # IMPORTANT, DONT REMOVE THE REST OF THE API SERVICE CODE! I'm not touching it so just paste until here.
 ```
 
 ## 6. The Nginx Proxy Manager (Advanced Routing)
@@ -242,7 +243,7 @@ location /.well-known/ {
 
 location /livekit/ {
     rewrite ^/livekit/(.*)$ /$1 break;
-    proxy_pass http://100.124.254.50:7880;
+    proxy_pass http://YOUR_SERVER_IP:7880;
     
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;

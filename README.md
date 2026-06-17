@@ -261,13 +261,13 @@ Start your stack (`docker compose up -d`). **Note:** The API container takes ove
 
 Finally, go to the domain you hosted Fluxer on, make an admin account, then go to the Fluxer Admin Dashboard (https://chat.example.com/admin):
 
-    1. Go to `Voice Regions`,
-    2. Create a region, save, refresh page then hit `Manage Servers`,
-    3. Plug in the following information:
-        - Endpoint: `wss://chat.example.com/livekit`,
-        - API Key: `fluxer` (Pulled from .env),
-        - API Secret: `LIVEKIT_API_SECRET` (Pulled from .env),
-        - Check `Server is Active`.
+1. Go to `Voice Regions`,
+2. Create a region, save, refresh page then hit `Manage Servers`,
+3. Plug in the following information:
+    * Endpoint: `wss://chat.example.com/livekit` (Don't forget to change it!),
+    * API Key: `fluxer` (Pulled from .env),
+    * API Secret: `LIVEKIT_API_SECRET` (Pulled from .env),
+    * Check `Server is Active`.
 
 Congratulations! You are now a proud owner of a self hosted, self managed, localized, free-and-open-source, Discord alternative
 Make your communities, add your friends, regret the fact that you made a social app behind a firewall, and above all... Enjoy!

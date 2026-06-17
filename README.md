@@ -74,17 +74,22 @@ log_level: info
 rtc:
   tcp_port: 7881
   udp_port: 7882
-  use_external_ip: true
-  node_ip: YOUR_SERVER_IP  # e.g., 192.168.1.50 or Tailscale 100.x.x.x IP
-  stun_servers:
-    - stun.l.google.com:19302
-    - stun1.l.google.com:19302
+  use_external_ip: false
+  node_ip: 100.124.254.50
+
+turn:
+  enabled: false
+
+webhook:
+  api_key: fluxer
+  urls:
+    - http://YOUR_SERVER_IP:8442/webhooks/livekit
 
 ```
 
 ## 5. The `docker-compose.yml` (Local Volumes & API Bypass)
 
-We are moving away from anonymous Docker volumes to localized `./` folders so your data survives tear-downs. Crucially, we are exposing the `api` service to port `8442` so Nginx can reach it directly.
+We are moving away from anonymous Docker volumes to localized `./` folders so your data survives tear-downs. Crucially, we are exposing the `api` service to port `8442` so Nginx can reach it directly. `8442` is another magic number, change it to whatever you like.
 
 ```yaml
 services:
@@ -143,15 +148,15 @@ services:
   livekit:
     image: livekit/livekit-server:v1.12.0
     restart: unless-stopped
+    network_mode: "host"  # <--- THIS IS THE MAGIC FIX
     command: ["--config", "/etc/livekit.yaml"]
     environment:
       LIVEKIT_KEYS: "${LIVEKIT_API_KEY}:${LIVEKIT_API_SECRET}"
     volumes:
       - ./livekit.yaml:/etc/livekit.yaml:ro # almooost there!
-    ports:
-      - "${FLUXER_LIVEKIT_TCP_PORT:-7881}:7881"
-      - "${FLUXER_LIVEKIT_UDP_PORT:-7882}:7882/udp"
-
+    #ports: <------- we comment these out because we gave livekit host network access to be able to read WebRTC calls.
+    #  - "${FLUXER_LIVEKIT_TCP_PORT:-7881}:7881"
+    #  - "${FLUXER_LIVEKIT_UDP_PORT:-7882}:7882/udp" 
   api:
     image: ${FLUXER_REGISTRY:-ghcr.io/${FLUXER_REGISTRY_OWNER:-fluxerapp}}/fluxer-api:${FLUXER_IMAGE_TAG:-v1}
     environment:
@@ -195,9 +200,23 @@ location /.well-known/ {
     proxy_set_header X-Forwarded-Proto $scheme;
 }
 
+location /livekit/ {
+    rewrite ^/livekit/(.*)$ /$1 break;
+    proxy_pass http://100.124.254.50:7880;
+    
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+}
+
 ```
 
 Start your stack (`docker compose up -d`). **Note:** The API container takes over 3 minutes to run each time, especially the first time. Once it is fully booted, your Nginx proxy will perfectly orchestrate traffic between the Caddy frontend and the bypassed API backend.
 
 
-This gets Fluxer to work on HTTPS, but what I cant get working for the life of me is audio and video. It has to do with LiveKit, I've not been able to reverse-engineer it yet even though I've been tinkering on and off with it. If anyone has ideas/wants to bounce around hit me up on discord with the same username.
+## 7. Troubleshooting
+
+1. Verify that UFW is active and that your tailscale0 interface has a clean, green light to accept UDP and TCP traffic on ports 7880, 7881, and 7882

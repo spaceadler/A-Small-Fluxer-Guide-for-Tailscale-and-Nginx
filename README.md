@@ -21,7 +21,6 @@ Since Caddy will still handle the internal frontend, it strictly requires valid 
 1. Go to your Nginx Proxy Manager dashboard.
 2. Go to **SSL Certificates** -> **Add SSL Certificate** -> **Let's Encrypt**.
 3. Generate a wildcard or specific domain cert for your domain (e.g., `chat.example.com`).
-4. Download the generated `fullchain.pem` and `privkey.pem` files and place them in a folder called `./certs` right next to your `docker-compose.yml`.
 
 (Or get Tailscale to give out a certificate for your machine that you can use here. Warning, Tailscale hands out only one (1) certificate per machine. Although you can spin up more Tailscale containers, add them to your network, and farm out extra 4 certificates.)
 
@@ -169,7 +168,7 @@ If you blindly proxy Nginx to Caddy, Caddy will fail to route data requests (`/.
 To fix this, we use path-based routing via raw Nginx configurations to send data straight to the API container while stripping necessary prefixes.
 
 1. In NPM, edit your Proxy Host for `chat.example.com`.
-2. **Details Tab:** Set the Forward IP to your Docker Host IP, and the Port to `8443`, http mode. Select the certificate Force SSL.
+2. **Details Tab:** Set the Forward IP to your Docker Host IP, and the Port to `8443`, http mode (yes, http mode). Select the certificate Force SSL.
 3. **Custom Locations Tab:** Leave this completely blank.
 4. **Advanced (cog on the top right):** Paste the following configuration, replacing `YOUR_SERVER_IP` with your actual host machine's IP (e.g., `192.168.1.50`) and port if need be.
 
@@ -197,6 +196,7 @@ location /.well-known/ {
 
 ```
 
-Start your stack (`docker compose up -d`). **Note:** The API container takes over 2 minutes to run each time, especially the first time. Once it is fully booted, your Nginx proxy will perfectly orchestrate traffic between the Caddy frontend and the bypassed API backend.
+Start your stack (`docker compose up -d`). **Note:** The API container takes over 3 minutes to run each time, especially the first time. Once it is fully booted, your Nginx proxy will perfectly orchestrate traffic between the Caddy frontend and the bypassed API backend.
 
-This works completely for HTTPS, but what's left is getting audio and video to work. I've been tinkering on and off with this to no avail. If anyone has ideas/wants to bounce around hit me up on discord with the same username.
+
+This gets Fluxer to work on HTTPS, but what I cant get working for the life of me is audio and video. It has to do with LiveKit, I've not been able to reverse-engineer it yet even though I've been tinkering on and off with it. If anyone has ideas/wants to bounce around hit me up on discord with the same username.

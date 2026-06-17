@@ -269,7 +269,8 @@ Finally, go to the domain you hosted Fluxer on, make an admin account, then go t
     * API Secret: `LIVEKIT_API_SECRET` (Pulled from .env),
     * Check `Server is Active`.
 
-Congratulations! You are now a proud owner of a self hosted, self managed, localized, free-and-open-source, Discord alternative
+Congratulations! You are now a proud owner of a self hosted, self managed, localized, free-and-open-source, Discord alternative.
+
 Make your communities, add your friends, regret the fact that you made a social app behind a firewall, and above all... Enjoy!
 
 ## 8. Troubleshooting

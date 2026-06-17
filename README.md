@@ -74,7 +74,7 @@ log_level: info
 rtc:
   tcp_port: 7881
   udp_port: 7882
-  use_external_ip: false   # true by default, doesnt fit our usecase.
+  use_external_ip: true
   node_ip: YOUR_SERVER_IP  # e.g., 192.168.1.50 or Tailscale 100.x.x.x IP
   stun_servers:
     - stun.l.google.com:19302

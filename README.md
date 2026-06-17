@@ -29,20 +29,21 @@ Since Caddy will still handle the internal frontend, it strictly requires valid 
 Fluxer requires a massive amount of cryptographic keys. Instead of typing them manually, run this quick bash script in your terminal to generate the secure strings you need for your `.env` file.
 
 ```bash
-#!/bin/bash
-# generate-secrets.sh
-echo "--- COPY THESE INTO YOUR .env ---"
-echo "POSTGRES_PASSWORD=$(openssl rand -hex 32)"
-echo "MEILI_MASTER_KEY=$(openssl rand -hex 32)"
-echo "FLUXER_S3_SECRET_KEY=$(openssl rand -hex 32)"
-echo "FLUXER_SUDO_MODE_SECRET=$(openssl rand -hex 32)"
-echo "FLUXER_CONNECTION_INITIATION_SECRET=$(openssl rand -hex 32)"
-echo "FLUXER_GATEWAY_RPC_AUTH_TOKEN=$(openssl rand -hex 32)"
-echo "FLUXER_MEDIA_PROXY_SECRET_KEY=$(openssl rand -hex 32)"
-echo "FLUXER_MEDIA_PROXY_UPLOAD_RELAY_SECRET_BASE64=$(openssl rand -base64 32)"
-echo "FLUXER_ADMIN_SECRET_KEY_BASE=$(openssl rand -hex 32)"
-echo "FLUXER_ADMIN_OAUTH_CLIENT_SECRET=$(openssl rand -hex 32)"
-echo "LIVEKIT_API_SECRET=$(openssl rand -hex 32)"
+for key in POSTGRES_PASSWORD MEILI_MASTER_KEY FLUXER_S3_SECRET_KEY \
+  FLUXER_SUDO_MODE_SECRET FLUXER_CONNECTION_INITIATION_SECRET \
+  FLUXER_GATEWAY_RPC_AUTH_TOKEN FLUXER_MEDIA_PROXY_SECRET_KEY \
+  FLUXER_ADMIN_SECRET_KEY_BASE FLUXER_ADMIN_OAUTH_CLIENT_SECRET \
+  LIVEKIT_API_SECRET; do
+  sed -i "s|^$key=.*|$key=$(openssl rand -hex 32)|" .env
+done
+
+sed -i "s|^FLUXER_MEDIA_PROXY_UPLOAD_RELAY_SECRET_BASE64=.*|FLUXER_MEDIA_PROXY_UPLOAD_RELAY_SECRET_BASE64=$(openssl rand -base64 32)|" .env
+
+VAPID=$(docker run --rm node:24-alpine npx --yes web-push generate-vapid-keys --json)
+pub=$(printf '%s' "$VAPID" | grep -o '"publicKey":"[^"]*"' | cut -d'"' -f4)
+priv=$(printf '%s' "$VAPID" | grep -o '"privateKey":"[^"]*"' | cut -d'"' -f4)
+sed -i "s|^FLUXER_VAPID_PUBLIC_KEY=.*|FLUXER_VAPID_PUBLIC_KEY=$pub|" .env
+sed -i "s|^FLUXER_VAPID_PRIVATE_KEY=.*|FLUXER_VAPID_PRIVATE_KEY=$priv|" .env
 
 ```
 

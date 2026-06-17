@@ -216,7 +216,10 @@ location /livekit/ {
 
 Start your stack (`docker compose up -d`). **Note:** The API container takes over 3 minutes to run each time, especially the first time. Once it is fully booted, your Nginx proxy will perfectly orchestrate traffic between the Caddy frontend and the bypassed API backend.
 
-
 ## 7. Troubleshooting
 
 1. Verify that UFW is active and that your tailscale0 interface has a clean, green light to accept UDP and TCP traffic on ports 7880, 7881, and 7882
+
+---
+
+*powered by logic, coffee, and many sleepless nights*

@@ -76,7 +76,7 @@ rtc:
   tcp_port: 7881
   udp_port: 7882
   use_external_ip: false  # important!
-  node_ip: 100.124.254.50 # this as well!
+  node_ip: YOUR_SERVER_IP # this as well!
 
 turn:
   enabled: false
